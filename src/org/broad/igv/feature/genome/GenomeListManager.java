@@ -59,6 +59,7 @@ public class GenomeListManager {
     }
 
     private GenomeListManager() {
+        genomeItemMap = new HashMap<>();
     }
 
 
@@ -74,8 +75,7 @@ public class GenomeListManager {
      */
     public Map<String, GenomeListItem> getGenomeItemMap() throws IOException {
 
-        if (genomeItemMap == null) {
-            genomeItemMap = new HashMap<>();
+        if (genomeItemMap.isEmpty()) {
             genomeItemMap.putAll(getUserDefinedGenomeMap());
             genomeItemMap.putAll(getCachedGenomeArchiveList());
             if (genomeItemMap.isEmpty()) {
@@ -97,7 +97,7 @@ public class GenomeListManager {
      * Completely rebuild the genome drop down info.
      */
     public void rebuildGenomeItemMap() throws IOException {
-        genomeItemMap = null;
+        genomeItemMap.clear();
         serverGenomeMap = null;
         userDefinedGenomeMap = null;
         getGenomeItemMap();
