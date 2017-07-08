@@ -113,6 +113,7 @@ public class GenomeListManager {
     public void addGenomeItem(GenomeListItem genomeListItem, boolean userDefined) {
         genomeItemMap.put(genomeListItem.getId(), genomeListItem);
         if (userDefined) {
+            if(userDefinedGenomeMap == null) userDefinedGenomeMap = new HashMap<>();
             userDefinedGenomeMap.put(genomeListItem.getId(), genomeListItem);
             exportUserDefinedGenomeList();
         }
