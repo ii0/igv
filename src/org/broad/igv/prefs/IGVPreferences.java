@@ -552,16 +552,16 @@ public class IGVPreferences {
         put(SHOW_ATTRIBUTE_VIEWS_KEY, Boolean.toString(isShowable));
     }
 
-    public void setDefaultGenome(String genomeId) {
-        if (!genomeId.equals(get(DEFAULT_GENOME))) {
-            put(DEFAULT_GENOME, genomeId);
+    public void setLastGenome(String genomeId) {
+        if (!genomeId.equals(get(LAST_GENOME))) {
+            put(LAST_GENOME, genomeId);
         }
     }
 
 
-    public String getDefaultGenome() {
+    public String getLastGenome() {
 
-        String genome = get(DEFAULT_GENOME, Globals.DEFAULT_GENOME);
+        String genome = get(LAST_GENOME, Globals.DEFAULT_GENOME);
         return genome;
     }
 

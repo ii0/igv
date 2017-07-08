@@ -42,7 +42,7 @@ final public class Constants {
     public static final String LAST_SNAPSHOT_DIRECTORY = "LAST_SNAPSHOT_DIRECTORY";
     public static final String LAST_GENOME_IMPORT_DIRECTORY = "LAST_GENOME_IMPORT_DIRECTORY";
     public static final String DEFINE_GENOME_INPUT_DIRECTORY_KEY = "DEFINE_GENOME_INPUT_DIRECTORY_KEY";
-    public static final String DEFAULT_GENOME = "DEFAULT_GENOME_KEY";
+    public static final String LAST_GENOME = "DEFAULT_GENOME_KEY";
     public static final String AUTO_UPDATE_GENOMES = "AUTO_UPDATE_GENOMES";
     public static final String FRAME_BOUNDS_KEY = "IGV.Bounds";
 

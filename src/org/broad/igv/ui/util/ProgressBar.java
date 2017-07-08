@@ -175,6 +175,7 @@ public class ProgressBar extends JPanel
      * @return
      */
     public static ProgressDialog showProgressDialog(Frame dialogsParent, String title, ProgressMonitor monitor, boolean closeOnCompletion){
+
         ProgressDialog progressDialog = createProgressDialog(dialogsParent, title, monitor, closeOnCompletion);
 
         progressDialog.pack();

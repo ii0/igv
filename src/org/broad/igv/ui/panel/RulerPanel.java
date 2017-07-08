@@ -56,7 +56,7 @@ import java.text.DecimalFormat;
 import java.util.ArrayList;
 import java.util.List;
 
-import static org.broad.igv.prefs.Constants.DEFAULT_GENOME;
+import static org.broad.igv.prefs.Constants.LAST_GENOME;
 import static org.broad.igv.prefs.Constants.ENABLE_ANTIALISING;
 
 /**
@@ -234,7 +234,7 @@ public class RulerPanel extends JPanel {
         Genome genome = GenomeManager.getInstance().getCurrentGenome();
         if (genome == null) {
             log.warn("No genome found");
-            PreferencesManager.getPreferences().remove(DEFAULT_GENOME);
+            PreferencesManager.getPreferences().remove(LAST_GENOME);
             return;
         }
 
@@ -243,8 +243,8 @@ public class RulerPanel extends JPanel {
         chromosomeRects.clear();
         List<String> chrNames = genome.getLongChromosomeNames();
         if (chrNames == null) {
-            log.info("No chromosomes found for genome: " + PreferencesManager.getPreferences().getDefaultGenome());
-            PreferencesManager.getPreferences().remove(DEFAULT_GENOME);
+            log.info("No chromosomes found for genome: " + PreferencesManager.getPreferences().getLastGenome());
+            PreferencesManager.getPreferences().remove(LAST_GENOME);
         }
         if (chrNames.size() > 500) {
             return;

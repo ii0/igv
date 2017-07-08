@@ -5,7 +5,7 @@ import org.broad.igv.DirectoryManager;
 import org.broad.igv.Globals;
 import org.broad.igv.sam.AlignmentTrack;
 import org.broad.igv.ui.AboutDialog;
-import org.broad.igv.ui.IGVCommandBar;
+import org.broad.igv.ui.ShowDetailsBehavior;
 import org.broad.igv.ui.color.ColorUtilities;
 import org.broad.igv.event.IGVEventBus;
 import org.broad.igv.event.IGVEventObserver;
@@ -335,7 +335,7 @@ public class PreferencesManager implements IGVEventObserver {
 
         genericDefaults.put(GENOMES_SERVER_URL, Globals.DEFAULT_GENOME_URL);
         genericDefaults.put(OVERLAY_ATTRIBUTE_KEY, "LINKING_ID");
-        genericDefaults.put(DEFAULT_GENOME, Globals.DEFAULT_GENOME);
+        genericDefaults.put(LAST_GENOME, Globals.DEFAULT_GENOME);
 
         genericDefaults.put(USE_PROXY, "false");
         genericDefaults.put(PROXY_AUTHENTICATE, "false");
@@ -406,7 +406,7 @@ public class PreferencesManager implements IGVEventObserver {
         genericDefaults.put(TOOLTIP_INITIAL_DELAY, "50");
         genericDefaults.put(TOOLTIP_RESHOW_DELAY, "50");
         genericDefaults.put(TOOLTIP_DISMISS_DELAY, "60000");
-        genericDefaults.put(DETAILS_BEHAVIOR_KEY, IGVCommandBar.SHOW_DETAILS_BEHAVIOR.HOVER.name());
+        genericDefaults.put(DETAILS_BEHAVIOR_KEY, ShowDetailsBehavior.HOVER.name());
 
         genericDefaults.put(SHOW_SIZE_WARNING, "true");
 

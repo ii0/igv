@@ -531,11 +531,12 @@ public class ParsingUtils {
     }
 
 
-    public static boolean pathExists(String covPath) {
-        if (covPath == null) return false;
+    public static boolean pathExists(String path) {
+        if (path == null) return false;
         try {
-            return (new File(covPath)).exists() ||
-                    (HttpUtils.isRemoteURL(covPath) && HttpUtils.getInstance().resourceAvailable(new URL(covPath)));
+            final boolean fileExists = (new File(path)).exists();
+            return fileExists ||
+                    (HttpUtils.isRemoteURL(path) && HttpUtils.getInstance().resourceAvailable(new URL(path)));
         } catch (MalformedURLException e) {
             log.error(e.getMessage(), e);
             return false;

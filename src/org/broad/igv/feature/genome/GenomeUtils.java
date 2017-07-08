@@ -44,10 +44,10 @@ public class GenomeUtils {
 
     public static void main(String[] args) throws IOException {
 
-        String directory = args[1];
-        String genomeList = args[0];
+        String genomeListFile = args.length > 0 ? args[0] : "genomes/genomes.txt";
+        String outputDirectory = args.length > 1 ? args[1] : "genomes/sizes";
 
-        updateChromSizes(new File(directory), genomeList);
+        updateChromSizes(genomeListFile, new File(outputDirectory));
 
 //        mergeINCDCNames(
 //                new File("genomes/alias/hg38_alias.tab"),
@@ -65,7 +65,7 @@ public class GenomeUtils {
      * @param genomeListPath
      * @throws IOException
      */
-    public static void updateChromSizes(File directory, String genomeListPath) throws IOException {
+    public static void updateChromSizes(String genomeListPath, File directory) throws IOException {
 
         // http://igv.broadinstitute.org/genomes/genomes.txt
         // <Server-Side Genome List>
@@ -81,7 +81,7 @@ public class GenomeUtils {
                     String genomeID = tokens[2];
 
                     File outputFile = new File(directory, genomeID + ".chrom.sizes");
-                    if(outputFile.exists()) {
+                    if (outputFile.exists()) {
                         continue;
                     }
 
@@ -217,4 +217,5 @@ public class GenomeUtils {
         pw.close();
 
     }
+
 }

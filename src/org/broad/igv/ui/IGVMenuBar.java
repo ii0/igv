@@ -37,6 +37,7 @@ import org.broad.igv.cli_plugin.ui.SetPluginPathDialog;
 import org.broad.igv.dev.db.DBProfileEditor;
 import org.broad.igv.event.GenomeResetEvent;
 import org.broad.igv.feature.genome.GenomeListItem;
+import org.broad.igv.feature.genome.GenomeListManager;
 import org.broad.igv.feature.genome.GenomeManager;
 import org.broad.igv.ga4gh.Ga4ghAPIHelper;
 import org.broad.igv.ga4gh.OAuthUtils;
@@ -52,6 +53,7 @@ import org.broad.igv.ui.action.*;
 import org.broad.igv.event.GenomeChangeEvent;
 import org.broad.igv.event.IGVEventBus;
 import org.broad.igv.event.IGVEventObserver;
+import org.broad.igv.feature.genome.ManageGenomesDialog;
 import org.broad.igv.ui.legend.LegendDialog;
 import org.broad.igv.ui.panel.FrameManager;
 import org.broad.igv.ui.panel.MainPanel;
@@ -517,24 +519,6 @@ public class IGVMenuBar extends JMenuBar implements IGVEventObserver {
         return fileMenu;
     }
 
-    private void notifyGenomesAddedRemoved(List<GenomeListItem> selectedValues, boolean added) {
-        if (selectedValues == null || selectedValues.size() == 0) return;
-        int size = selectedValues.size();
-        String msg = "";
-        if (size == 1) {
-            msg += selectedValues.get(0) + " genome";
-        } else {
-            msg += size + " genomes";
-        }
-        if (added) {
-            msg += " added to";
-        } else {
-            msg += " removed from";
-        }
-        msg += " list";
-
-        MessageUtils.setStatusBarMessage(msg);
-    }
 
     private JMenu createGenomesMenu() {
         List<JComponent> menuItems = new ArrayList<JComponent>();
@@ -575,7 +559,7 @@ public class IGVMenuBar extends JMenuBar implements IGVEventObserver {
         menuAction = new MenuAction("Load Genome From Server...", null) {
             @Override
             public void actionPerformed(ActionEvent event) {
-                IGV.getInstance().loadGenomeFromServer();
+                GenomeManager.getInstance().loadGenomeFromServer();
             }
         };
         menuAction.setToolTipText(LOAD_GENOME_SERVER_TOOLTIP);
@@ -605,40 +589,6 @@ public class IGVMenuBar extends JMenuBar implements IGVEventObserver {
             public void actionPerformed(ActionEvent event) {
                 ManageGenomesDialog dialog2 = new ManageGenomesDialog(IGV.getMainFrame());
                 dialog2.setVisible(true);
-
-                boolean cancelled = dialog2.isCancelled();
-
-
-                if (!cancelled) {
-
-                    List<GenomeListItem> removedValuesList = dialog2.getRemovedValuesList();
-                    if (removedValuesList != null && !removedValuesList.isEmpty()) {
-                        try {
-                            GenomeManager.getInstance().deleteDownloadedGenomes(removedValuesList);
-                        } catch (IOException e) {
-                            MessageUtils.showErrorMessage("Error deleting genome files", e);
-                        }
-                        GenomeManager.getInstance().updateImportedGenomePropertyFile();
-                        notifyGenomesAddedRemoved(removedValuesList, false);
-
-                        String defaultGenomeKey = PreferencesManager.getPreferences().get(DEFAULT_GENOME);
-                        for (GenomeListItem item : removedValuesList) {
-                            if (defaultGenomeKey.equals(item.getId())) {
-                                PreferencesManager.getPreferences().remove(DEFAULT_GENOME);
-                                break;
-                            }
-                        }
-                    }
-
-                    List<GenomeListItem> addValuesList = dialog2.getAddValuesList();
-                    if (addValuesList.size() > 0) {
-                        GenomeManager.getInstance().downloadGenomes(addValuesList);
-
-                    } else {
-                        GenomeManager.getInstance().buildGenomeItemList();
-                        IGVEventBus.getInstance().post(new GenomeResetEvent());
-                    }
-                }
             }
         };
         menuAction.setToolTipText("Add, remove, or reorder genomes which appear in the dropdown list");

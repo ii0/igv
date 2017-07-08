@@ -27,13 +27,18 @@
  * Created by JFormDesigner on Fri Sep 07 13:22:05 EDT 2012
  */
 
-package org.broad.igv.ui;
+package org.broad.igv.feature.genome;
 
+import org.apache.log4j.Logger;
 import org.broad.igv.Globals;
-import org.broad.igv.feature.genome.GenomeListItem;
-import org.broad.igv.feature.genome.GenomeManager;
+import org.broad.igv.event.GenomeResetEvent;
+import org.broad.igv.event.IGVEventBus;
 import org.broad.igv.prefs.IGVPreferences;
+import org.broad.igv.prefs.PreferencesManager;
+import org.broad.igv.ui.commandbar.GenomeSelectionDialog;
+import org.broad.igv.ui.commandbar.JList7;
 import org.broad.igv.ui.util.MessageUtils;
+import org.broad.igv.util.LongRunningTask;
 
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
@@ -43,26 +48,26 @@ import java.awt.datatransfer.StringSelection;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.stream.Collectors;
 
-/**
- * @author Jacob Silterra
- */
+import static org.broad.igv.prefs.Constants.LAST_GENOME;
+
 public class ManageGenomesDialog extends JDialog {
 
-    private boolean cancelled = true;
+    private static Logger log = Logger.getLogger(ManageGenomesDialog.class);
+
     private List<GenomeListItem> allListItems;
     private List<GenomeListItem> removedValuesList;
     private List<GenomeListItem> addValuesList;
 
 
-    private boolean haveLocalGenomes = false;
+    private boolean haveLocalSequence = false;
     private static final String LOCAL_SEQUENCE_CHAR = "\u002A";
 
     public ManageGenomesDialog(Frame owner) {
@@ -76,36 +81,80 @@ public class ManageGenomesDialog extends JDialog {
 
     private void initData() {
 
-        allListItems = new ArrayList<>(GenomeManager.getInstance().getGenomeListItems());
+        allListItems = new ArrayList<>(GenomeListManager.getInstance().getGenomeListItems());
         removedValuesList = new ArrayList<>();
         addValuesList = new ArrayList<>();
 
-        for(GenomeListItem item: allListItems){
-            if(item.hasDownloadedSequence()){
-                haveLocalGenomes = true;
+        for (GenomeListItem item : allListItems) {
+            if (item.hasDownloadedSequence()) {
+                haveLocalSequence = true;
                 break;
             }
         }
-        String genomeId = GenomeManager.getInstance().getGenomeId();
+
         buildList();
         genomeList.setTransferHandler(new SimpleTransferHandler());
 
         addButton.setEnabled(!GenomeManager.getInstance().isServerGenomeListUnreachable());
-        label2.setVisible(haveLocalGenomes);
+        label2.setVisible(haveLocalSequence);
     }
 
     private void buildList() {
-        genomeList.setListData(allListItems.toArray());
+        String currentId = GenomeManager.getInstance().getGenomeId();
+        List<GenomeListItem> filteredList = allListItems.stream()
+                .filter((item) -> !item.getId().equals(currentId))
+                .collect(Collectors.toList());
+        genomeList.setListData(filteredList.toArray());
     }
 
     private void cancelButtonActionPerformed(ActionEvent e) {
-        cancelled = true;
         setVisible(false);
     }
 
-    private void saveButtonActionPerformed(ActionEvent e) {
+    private void saveButtonActionPerformed(ActionEvent event) {
 
-        cancelled = false;
+        Runnable runnable = () -> {
+
+            List<GenomeListItem> removedValuesList = getRemovedValuesList();
+
+            if (removedValuesList != null && !removedValuesList.isEmpty()) {
+                try {
+                    GenomeManager.getInstance().deleteDownloadedGenomes(removedValuesList);
+                } catch (IOException e) {
+                    log.error("Error deleting genome files", e);
+                    MessageUtils.showErrorMessage("Error deleting genome files", e);
+                }
+
+                String lastGenomeKey = PreferencesManager.getPreferences().get(LAST_GENOME);
+                for (GenomeListItem item : removedValuesList) {
+                    if (lastGenomeKey.equals(item.getId())) {
+                        PreferencesManager.getPreferences().remove(LAST_GENOME);
+                        break;
+                    }
+                }
+            }
+
+            List<GenomeListItem> addValuesList = getAddValuesList();
+            if (addValuesList.size() > 0) {
+                GenomeManager.getInstance().downloadGenomes(addValuesList);
+                GenomeListManager.getInstance().addServerGenomeItems(addValuesList);
+            }
+
+            if (removedValuesList.size() > 0 || addValuesList.size() > 0) {
+                IGVEventBus.getInstance().post(new GenomeResetEvent());
+            }
+
+            if (addValuesList.size() > 0) {
+                try {
+                    GenomeManager.getInstance().loadGenomeById(addValuesList.get(0).getId());
+                } catch (IOException e) {
+                    log.error("Error loading genome: " + addValuesList.get(0).getDisplayableName(), e);
+                }
+            }
+        };
+
+        LongRunningTask.submit(runnable);
+
         setVisible(false);
     }
 
@@ -136,8 +185,8 @@ public class ManageGenomesDialog extends JDialog {
     }
 
     private void addButtonActionPerformed(ActionEvent e) {
-        Collection<GenomeListItem> inputListItems = GenomeManager.getInstance().getGenomeArchiveList();
-        if(inputListItems == null){
+        Collection<GenomeListItem> inputListItems = GenomeListManager.getInstance().getServerGenomeList();
+        if (inputListItems == null) {
             IOException exc = new IOException("Unable to reach genome server");
             MessageUtils.showErrorMessage(exc.getMessage(), exc);
             return;
@@ -152,9 +201,6 @@ public class ManageGenomesDialog extends JDialog {
         }
     }
 
-    public boolean isCancelled() {
-        return cancelled;
-    }
 
     private int findItem(String text) {
         int index = 0;
@@ -227,7 +273,7 @@ public class ManageGenomesDialog extends JDialog {
         }
     }
 
-    private class GenomeCellRenderer implements ListCellRenderer{
+    private class GenomeCellRenderer implements ListCellRenderer {
         @Override
         public Component getListCellRendererComponent(JList list, Object value, int index, boolean isSelected, boolean cellHasFocus) {
 
@@ -236,14 +282,14 @@ public class ManageGenomesDialog extends JDialog {
             GenomeListItem item = (GenomeListItem) value;
             String displayableName = item.getDisplayableName();
 
-            comp.setToolTipText(item.getLocation());
+            comp.setToolTipText(item.getPath());
             if (isSelected) {
                 comp.setBackground(genomeList.getSelectionBackground());
                 comp.setForeground(genomeList.getSelectionForeground());
                 comp.setOpaque(isSelected);
             }
 
-            if(item.hasDownloadedSequence()){
+            if (item.hasDownloadedSequence()) {
                 displayableName += LOCAL_SEQUENCE_CHAR;
             }
 
