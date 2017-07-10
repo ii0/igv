@@ -141,7 +141,7 @@ public abstract class GenomeDescriptor {
     public boolean isChromosomesAreOrdered() {
         return chromosomesAreOrdered;
     }
-    
+
 
     public String getUrl() {
         return url;
