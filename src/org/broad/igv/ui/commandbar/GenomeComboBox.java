@@ -1,6 +1,8 @@
 package org.broad.igv.ui.commandbar;
 
 import org.apache.log4j.Logger;
+import org.broad.igv.event.GenomeResetEvent;
+import org.broad.igv.event.IGVEventBus;
 import org.broad.igv.feature.genome.GenomeListItem;
 import org.broad.igv.feature.genome.GenomeListManager;
 import org.broad.igv.feature.genome.GenomeManager;
@@ -16,9 +18,7 @@ import java.awt.*;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Vector;
+import java.util.*;
 
 /**
  * Created by jrobinso on 7/6/17.
@@ -32,6 +32,7 @@ public class GenomeComboBox extends JComboBox<GenomeListItem> {
         setRenderer(new ComboBoxRenderer());
         addActionListener(new GenomeBoxActionListener());
     }
+
 
     public void refreshGenomeListComboBox() {
         setModel(getModelForGenomeListComboBox());
@@ -97,7 +98,7 @@ public class GenomeComboBox extends JComboBox<GenomeListItem> {
 
                         //User selected "more", pull up dialog and revert combo box
                         if (genomeListItem == GenomeListItem.ITEM_MORE) {
-                            GenomeManager.getInstance().loadGenomeFromServer();
+                            loadGenomeFromServer();
                             return;
                         }
 
@@ -206,6 +207,62 @@ public class GenomeComboBox extends JComboBox<GenomeListItem> {
 
 
             return renderer;
+        }
+    }
+
+
+    /**
+     * Open a selection list to load a genome from the server.   This method is static because its used by multiple
+     * UI elements  (menu bar and genome selection pulldown).
+     */
+    public static void loadGenomeFromServer() {
+
+        Runnable showDialog = () -> {
+
+            Collection<GenomeListItem> inputListItems = GenomeListManager.getInstance().getServerGenomeList();
+            if (inputListItems == null) {
+                //Could not reach genome server.  Not necessary to display a message, getServerGenomeArchiveList does it already
+                return;
+            }
+
+            GenomeSelectionDialog dialog = new GenomeSelectionDialog(IGV.getMainFrame(), inputListItems, ListSelectionModel.SINGLE_SELECTION);
+            UIUtilities.invokeAndWaitOnEventThread(() -> dialog.setVisible(true));
+
+            if (dialog.isCanceled()) {
+                // Clear the "More..."  selection in pulldown
+                IGVEventBus.getInstance().post(new GenomeResetEvent());
+            } else {
+
+                java.util.List<GenomeListItem> selectedValues = dialog.getSelectedValuesList();
+
+
+                if (selectedValues != null && selectedValues.size() >= 1) {
+
+                    GenomeManager.getInstance().downloadGenomes(selectedValues, dialog.downloadSequence());
+                    GenomeListManager.getInstance().addServerGenomeItems(selectedValues);
+
+                    // If a single genome was selected, go to it
+                    if (selectedValues.size() == 1) {
+                        final GenomeListItem firstItem = selectedValues.get(0);
+                        try {
+                            GenomeManager.getInstance().loadGenome(firstItem.getPath(), null);
+
+
+                        } catch (IOException e) {
+
+                            GenomeListManager.getInstance().removeGenomeListItem(firstItem);
+                            MessageUtils.showErrorMessage("Error loading genome " + firstItem.getDisplayableName(), e);
+                            log.error("Error loading genome " + firstItem.getDisplayableName(), e);
+                        }
+                    }
+                }
+            }
+        };
+
+        if (SwingUtilities.isEventDispatchThread()) {
+            LongRunningTask.submit(showDialog);
+        } else {
+            showDialog.run();
         }
     }
 

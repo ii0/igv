@@ -2214,7 +2214,7 @@ public class IGV implements IGVEventObserver {
                 try {
                     GenomeManager.getInstance().loadGenomeById(genomeId);
                     genomeLoaded = true;
-                } catch (IOException e) {
+                } catch (Exception e) {
                     MessageUtils.showErrorMessage("Error loading genome: " + genomeId, e);
                     log.error("Error loading genome: " + genomeId, e);
                 }

@@ -64,6 +64,7 @@ public class GenomeSelectionDialog extends javax.swing.JDialog {
     private JTextField genomeFilter;
     private JScrollPane scrollPane1;
     private JList7<GenomeListItem> genomeList;
+    private JCheckBox downloadSequenceCB;
     private JPanel buttonBar;
     private JButton okButton;
     private JButton cancelButton;
@@ -90,6 +91,7 @@ public class GenomeSelectionDialog extends javax.swing.JDialog {
 
         initData(inputListItems);
 
+        downloadSequenceCB.setVisible(listSelectionMode == ListSelectionModel.SINGLE_SELECTION);
     }
 
     private void initData(Collection<GenomeListItem> inputListItems) {
@@ -153,6 +155,7 @@ public class GenomeSelectionDialog extends javax.swing.JDialog {
         switch (e.getClickCount()) {
             case 1:
                 List<GenomeListItem> selValues = genomeList.getSelectedValuesList();
+                downloadSequenceCB.setEnabled(selValues != null && selValues.size() == 1);
                 break;
             case 2:
                 okButtonActionPerformed(null);
@@ -168,8 +171,26 @@ public class GenomeSelectionDialog extends javax.swing.JDialog {
         return selectedValuesList;
     }
 
+    public boolean downloadSequence(){
+        return !isCanceled() && downloadSequenceCB.isEnabled() && downloadSequenceCB.isSelected();
+    }
+
     public boolean isCanceled() {
         return isCanceled;
+    }
+
+    private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
+        isCanceled = true;
+        selectedValuesList = null;
+        setVisible(false);
+        dispose();
+    }
+
+    private void okButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButtonActionPerformed
+        isCanceled = false;
+        selectedValuesList = genomeList.getSelectedValuesList();
+        setVisible(false);
+        dispose();
     }
 
 
@@ -182,6 +203,7 @@ public class GenomeSelectionDialog extends javax.swing.JDialog {
         genomeFilter = new JTextField();
         scrollPane1 = new JScrollPane();
         genomeList = new JList7<>();
+        downloadSequenceCB = new JCheckBox();
         buttonBar = new JPanel();
         okButton = new JButton();
         cancelButton = new JButton();
@@ -217,10 +239,10 @@ public class GenomeSelectionDialog extends javax.swing.JDialog {
                 {
                     filterPanel.setMaximumSize(new Dimension(2147483647, 28));
                     filterPanel.setLayout(new GridBagLayout());
-                    ((GridBagLayout) filterPanel.getLayout()).columnWidths = new int[]{0, 0, 0};
-                    ((GridBagLayout) filterPanel.getLayout()).rowHeights = new int[]{0, 0};
-                    ((GridBagLayout) filterPanel.getLayout()).columnWeights = new double[]{1.0, 1.0, 1.0E-4};
-                    ((GridBagLayout) filterPanel.getLayout()).rowWeights = new double[]{1.0, 1.0E-4};
+                    ((GridBagLayout)filterPanel.getLayout()).columnWidths = new int[] {0, 0, 0};
+                    ((GridBagLayout)filterPanel.getLayout()).rowHeights = new int[] {0, 0};
+                    ((GridBagLayout)filterPanel.getLayout()).columnWeights = new double[] {1.0, 1.0, 1.0E-4};
+                    ((GridBagLayout)filterPanel.getLayout()).rowWeights = new double[] {1.0, 1.0E-4};
 
                     //---- label1 ----
                     label1.setText("Filter:");
@@ -262,60 +284,54 @@ public class GenomeSelectionDialog extends javax.swing.JDialog {
                 }
                 contentPanel.add(scrollPane1);
 
-                dialogPane.add(contentPanel, BorderLayout.CENTER);
-
-                //======== buttonBar ========
-                {
-                    buttonBar.setBorder(new EmptyBorder(12, 0, 0, 0));
-                    buttonBar.setLayout(new GridBagLayout());
-                    ((GridBagLayout) buttonBar.getLayout()).columnWidths = new int[]{0, 85, 80};
-                    ((GridBagLayout) buttonBar.getLayout()).columnWeights = new double[]{1.0, 0.0, 0.0};
-
-                    //---- okButton ----
-                    okButton.setText("OK");
-                    okButton.addActionListener(new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            okButtonActionPerformed(e);
-                        }
-                    });
-                    buttonBar.add(okButton, new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-                            new Insets(0, 0, 5, 5), 0, 0));
-
-                    //---- cancelButton ----
-                    cancelButton.setText("Cancel");
-                    cancelButton.addActionListener(new ActionListener() {
-                        @Override
-                        public void actionPerformed(ActionEvent e) {
-                            cancelButtonActionPerformed(e);
-                        }
-                    });
-                    buttonBar.add(cancelButton, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
-                            GridBagConstraints.CENTER, GridBagConstraints.BOTH,
-                            new Insets(0, 0, 5, 0), 0, 0));
-                }
-                dialogPane.add(buttonBar, BorderLayout.SOUTH);
+                //---- downloadSequenceCB ----
+                downloadSequenceCB.setText("Download Sequence");
+                downloadSequenceCB.setAlignmentX(1.0F);
+                downloadSequenceCB.setToolTipText("Download the full sequence for this organism. Note that these files can be very large (human is about 3 gigabytes)");
+                downloadSequenceCB.setMaximumSize(new Dimension(1000, 23));
+                downloadSequenceCB.setPreferredSize(new Dimension(300, 23));
+                downloadSequenceCB.setMinimumSize(new Dimension(300, 23));
+                contentPanel.add(downloadSequenceCB);
             }
-            contentPane.add(dialogPane, BorderLayout.CENTER);
-            pack();
-            setLocationRelativeTo(getOwner());
+            dialogPane.add(contentPanel, BorderLayout.CENTER);
+
+            //======== buttonBar ========
+            {
+                buttonBar.setBorder(new EmptyBorder(12, 0, 0, 0));
+                buttonBar.setLayout(new GridBagLayout());
+                ((GridBagLayout)buttonBar.getLayout()).columnWidths = new int[] {0, 85, 80};
+                ((GridBagLayout)buttonBar.getLayout()).columnWeights = new double[] {1.0, 0.0, 0.0};
+
+                //---- okButton ----
+                okButton.setText("OK");
+                okButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        okButtonActionPerformed(e);
+                    }
+                });
+                buttonBar.add(okButton, new GridBagConstraints(1, 0, 1, 1, 0.0, 0.0,
+                        GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+                        new Insets(0, 0, 5, 5), 0, 0));
+
+                //---- cancelButton ----
+                cancelButton.setText("Cancel");
+                cancelButton.addActionListener(new ActionListener() {
+                    @Override
+                    public void actionPerformed(ActionEvent e) {
+                        cancelButtonActionPerformed(e);
+                    }
+                });
+                buttonBar.add(cancelButton, new GridBagConstraints(2, 0, 1, 1, 0.0, 0.0,
+                        GridBagConstraints.CENTER, GridBagConstraints.BOTH,
+                        new Insets(0, 0, 5, 0), 0, 0));
+            }
+            dialogPane.add(buttonBar, BorderLayout.SOUTH);
         }
-    }
-
-    private void cancelButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_cancelButtonActionPerformed
-        isCanceled = true;
-        selectedValuesList = null;
-        setVisible(false);
-        dispose();
-    }
-
-    private void okButtonActionPerformed(java.awt.event.ActionEvent evt) {//GEN-FIRST:event_okButtonActionPerformed
-        isCanceled = false;
-        selectedValuesList = genomeList.getSelectedValuesList();
-        setVisible(false);
-        dispose();
-    }
+        contentPane.add(dialogPane, BorderLayout.CENTER);
+        pack();
+        setLocationRelativeTo(getOwner());
+    }// </editor-fold>//GEN-END:initComponents
 
 
 }

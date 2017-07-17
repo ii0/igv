@@ -66,7 +66,14 @@ public class Genome {
     private FeatureTrack geneTrack;
     private String species;
     private String ucscID;
+    private GenomeDescriptor descriptor;   // Can be null
 
+
+    public Genome(String id, String displayName, Sequence sequence, boolean chromosOrdered, GenomeDescriptor descriptor) {
+        this(id, displayName, sequence, chromosOrdered);
+        this.descriptor = descriptor;
+
+    }
     /**
      * @param id
      * @param displayName
@@ -141,6 +148,10 @@ public class Genome {
             }
             return chrAliasTable.get(str);
         }
+    }
+
+    public GenomeDescriptor getDescriptor() {
+        return descriptor;
     }
 
     public Map<String, String> getChrAliasTable() {

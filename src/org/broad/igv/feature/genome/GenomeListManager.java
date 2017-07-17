@@ -315,7 +315,6 @@ public class GenomeListManager {
         for (GenomeListItem genomeListItem : removedValuesList) {
             final String id = genomeListItem.getId();
             genomeItemMap.remove(id);
-            serverGenomeMap.remove(id);
             if (userDefinedGenomeMap != null && userDefinedGenomeMap.containsKey(id)) {
                 userDefinedGenomeMap.remove(id);
                 updateImportFile = true;
@@ -331,7 +330,6 @@ public class GenomeListManager {
 
         final String id = genomeListItem.getId();
         genomeItemMap.remove(id);
-        serverGenomeMap.remove(id);
         if (userDefinedGenomeMap != null && userDefinedGenomeMap.containsKey(id)) {
             userDefinedGenomeMap.remove(id);
             exportUserDefinedGenomeList();

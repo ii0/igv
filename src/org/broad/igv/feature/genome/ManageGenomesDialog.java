@@ -38,6 +38,7 @@ import org.broad.igv.prefs.PreferencesManager;
 import org.broad.igv.ui.commandbar.GenomeSelectionDialog;
 import org.broad.igv.ui.commandbar.JList7;
 import org.broad.igv.ui.util.MessageUtils;
+import org.broad.igv.util.HttpUtils;
 import org.broad.igv.util.LongRunningTask;
 
 import javax.swing.*;
@@ -50,6 +51,7 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.awt.event.ActionEvent;
 import java.awt.event.KeyAdapter;
 import java.awt.event.KeyEvent;
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -119,7 +121,7 @@ public class ManageGenomesDialog extends JDialog {
 
             if (removedValuesList != null && !removedValuesList.isEmpty()) {
                 try {
-                    GenomeManager.getInstance().deleteDownloadedGenomes(removedValuesList);
+                    deleteDownloadedGenomes(removedValuesList);
                 } catch (IOException e) {
                     log.error("Error deleting genome files", e);
                     MessageUtils.showErrorMessage("Error deleting genome files", e);
@@ -136,7 +138,7 @@ public class ManageGenomesDialog extends JDialog {
 
             List<GenomeListItem> addValuesList = getAddValuesList();
             if (addValuesList.size() > 0) {
-                GenomeManager.getInstance().downloadGenomes(addValuesList);
+                GenomeManager.getInstance().downloadGenomes(addValuesList, false);
                 GenomeListManager.getInstance().addServerGenomeItems(addValuesList);
             }
 
@@ -156,6 +158,40 @@ public class ManageGenomesDialog extends JDialog {
         LongRunningTask.submit(runnable);
 
         setVisible(false);
+    }
+
+
+    /**
+     * Delete the specified .genome files and their sequences, only if they were downloaded from the
+     * server. Doesn't touch user defined genomes
+     *
+     * @param removedValuesList
+     */
+    public void deleteDownloadedGenomes(List<GenomeListItem> removedValuesList) throws IOException {
+
+        for (GenomeListItem item : removedValuesList) {
+
+            String loc = item.getPath();
+            if (!HttpUtils.isRemoteURL(loc)) {
+                File genFile = new File(loc);
+                genFile.delete();
+            }
+
+            File localFasta = GenomeManager.getInstance().getLocalFasta(item.getId());
+            if (localFasta != null) {
+                GenomeManager.getInstance().removeLocalFasta(item.getId());
+                boolean d = MessageUtils.confirm("Delete local fasta file (" + localFasta.getName() + ")?");
+                if (d) {
+                    localFasta.delete();
+                    (new File(localFasta.getAbsolutePath() + ".fai")).delete();
+                    (new File(localFasta.getAbsolutePath() + ".gzi")).delete();
+                }
+
+            }
+
+        }
+
+        GenomeListManager.getInstance().removeAllItems(removedValuesList);
     }
 
     private void removeSelected() {

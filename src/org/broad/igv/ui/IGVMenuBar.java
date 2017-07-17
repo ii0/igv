@@ -35,9 +35,6 @@ import org.broad.igv.cli_plugin.PluginSpecReader;
 import org.broad.igv.cli_plugin.ui.RunPlugin;
 import org.broad.igv.cli_plugin.ui.SetPluginPathDialog;
 import org.broad.igv.dev.db.DBProfileEditor;
-import org.broad.igv.event.GenomeResetEvent;
-import org.broad.igv.feature.genome.GenomeListItem;
-import org.broad.igv.feature.genome.GenomeListManager;
 import org.broad.igv.feature.genome.GenomeManager;
 import org.broad.igv.ga4gh.Ga4ghAPIHelper;
 import org.broad.igv.ga4gh.OAuthUtils;
@@ -54,6 +51,7 @@ import org.broad.igv.event.GenomeChangeEvent;
 import org.broad.igv.event.IGVEventBus;
 import org.broad.igv.event.IGVEventObserver;
 import org.broad.igv.feature.genome.ManageGenomesDialog;
+import org.broad.igv.ui.commandbar.GenomeComboBox;
 import org.broad.igv.ui.legend.LegendDialog;
 import org.broad.igv.ui.panel.FrameManager;
 import org.broad.igv.ui.panel.MainPanel;
@@ -559,7 +557,7 @@ public class IGVMenuBar extends JMenuBar implements IGVEventObserver {
         menuAction = new MenuAction("Load Genome From Server...", null) {
             @Override
             public void actionPerformed(ActionEvent event) {
-                GenomeManager.getInstance().loadGenomeFromServer();
+                GenomeComboBox.loadGenomeFromServer();
             }
         };
         menuAction.setToolTipText(LOAD_GENOME_SERVER_TOOLTIP);

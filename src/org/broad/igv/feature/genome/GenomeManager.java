@@ -33,8 +33,7 @@
  */
 package org.broad.igv.feature.genome;
 
-import htsjdk.tribble.util.ParsingUtils;
-import org.apache.commons.io.IOUtils;
+
 import org.apache.log4j.Logger;
 import org.broad.igv.DirectoryManager;
 import org.broad.igv.Globals;
@@ -52,10 +51,9 @@ import org.broad.igv.track.*;
 import org.broad.igv.ui.IGV;
 import org.broad.igv.ui.commandbar.GenomeSelectionDialog;
 import org.broad.igv.ui.panel.FrameManager;
-import org.broad.igv.ui.util.MessageUtils;
-import org.broad.igv.ui.util.ProgressBar;
+import org.broad.igv.ui.util.*;
 import org.broad.igv.ui.util.ProgressMonitor;
-import org.broad.igv.ui.util.UIUtilities;
+import org.broad.igv.ui.util.download.Downloader;
 import org.broad.igv.util.*;
 
 import javax.swing.*;
@@ -70,7 +68,6 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 import java.util.zip.ZipInputStream;
-import java.util.zip.ZipOutputStream;
 
 /**
  * @author jrobinso
@@ -95,6 +92,7 @@ public class GenomeManager {
      */
     public static final String GENOME_ARCHIVE_CUSTOM_SEQUENCE_LOCATION_KEY = "customSequenceLocation";
     public static final String GENOME_CHR_ALIAS_FILE_KEY = "chrAliasFile";
+    public static final String SEQUENCE_MAP_FILE = "sequenceMap.txt";
     private static Logger log = Logger.getLogger(GenomeManager.class);
 
     private static final String ACT_USER_DEFINED_GENOME_LIST_FILE = "user-defined-genomes.txt";
@@ -104,14 +102,14 @@ public class GenomeManager {
 
     private GenomeListManager genomeListManager;
 
-    public static String getUserDefinedGenomeListFile() {
-        if (Globals.isTesting()) {
-            return TEST_USER_DEFINED_GENOME_LIST_FILE;
-        } else {
-            return ACT_USER_DEFINED_GENOME_LIST_FILE;
-        }
-
-    }
+//    public static String getUserDefinedGenomeListFile() {
+//        if (Globals.isTesting()) {
+//            return TEST_USER_DEFINED_GENOME_LIST_FILE;
+//        } else {
+//            return ACT_USER_DEFINED_GENOME_LIST_FILE;
+//        }
+//
+//    }
 
     private static GenomeManager theInstance;
 
@@ -119,6 +117,7 @@ public class GenomeManager {
 
     boolean serverGenomeListUnreachable = false;
 
+    private Map<String, File> localSequenceMap;
 
     /**
      * Map from genomeID -> GenomeListItem
@@ -134,6 +133,7 @@ public class GenomeManager {
 
     private GenomeManager() {
         genomeListManager = GenomeListManager.getInstance();
+        localSequenceMap = loadSequenceMap();
     }
 
     public void setCurrentGenome(Genome genome) {
@@ -250,6 +250,7 @@ public class GenomeManager {
 
             GenomeListItem genomeListItem = new GenomeListItem(newGenome.getDisplayName(), altGenomePath, newGenome.getId());
             final Set<String> serverGenomeIDs = genomeListManager.getServerGenomeIDs();
+
             boolean userDefined = !serverGenomeIDs.contains(newGenome.getId());
             genomeListManager.addGenomeItem(genomeListItem, userDefined);
 
@@ -432,7 +433,15 @@ public class GenomeManager {
             cytobandMap = loadCytobandFile(genomeDescriptor);
         }
 
-        String sequencePath = genomeDescriptor.getSequencePath();
+        String sequencePath = localSequenceMap.containsKey(genomeDescriptor.getId()) ?
+                loadSequenceMap().get(genomeDescriptor.getId()).getAbsolutePath() :
+                genomeDescriptor.getSequencePath();
+
+        // Convert legacy "local fasta" .genome file
+        if (genomeDescriptor.hasCustomSequenceLocation()) {
+            String localPath = genomeDescriptor.getSequencePath();
+            addLocalFasta(genomeDescriptor.getId(), new File(localPath));
+        }
 
         Sequence sequence = null;
         boolean chromosOrdered = false;
@@ -461,7 +470,8 @@ public class GenomeManager {
             chromosOrdered = true;
         }
 
-        newGenome = new Genome(id, displayName, sequence, chromosOrdered);
+        newGenome = new Genome(id, displayName, sequence, chromosOrdered, genomeDescriptor);
+
         if (cytobandMap != null) {
             newGenome.setCytobands(cytobandMap);
         }
@@ -508,7 +518,9 @@ public class GenomeManager {
      * @throws UnsupportedEncodingException
      */
     private File getArchiveFile(String genomePath) throws MalformedURLException, UnsupportedEncodingException {
+
         File archiveFile;
+
         if (HttpUtils.isRemoteURL(genomePath.toLowerCase())) {
             // We need a local copy, as there is no http zip file reader
             URL genomeArchiveURL = new URL(genomePath);
@@ -617,9 +629,6 @@ public class GenomeManager {
         try {
             if (cachedFile.exists()) {
 
-                //Check to see cached version has a custom sequence
-                GenomeDescriptor cachedDescriptor = parseGenomeArchiveFile(cachedFile);
-
                 //File sizes won't be the same if the local version has a different sequence location
                 boolean remoteModfied = HttpUtils.getInstance().remoteIsNewer(cachedFile, genomeArchiveURL);
 
@@ -634,6 +643,10 @@ public class GenomeManager {
 
                         tmpFile.deleteOnExit();
                         boolean success = true;
+
+                        //if (cachedDescriptor.hasCustomSequenceLocation()) {
+                        //    success = rewriteSequenceLocation(tmpFile, cachedDescriptor.getSequencePath());
+                        //}
 
                         if (success) {
                             FileUtils.copyFile(tmpFile, cachedFile);
@@ -987,45 +1000,31 @@ public class GenomeManager {
     }
 
 
-    /**
-     * Delete the specified .genome files and their sequences, only if they were downloaded from the
-     * server. Doesn't touch user defined genomes
-     *
-     * @param removedValuesList
-     */
-    public void deleteDownloadedGenomes(List<GenomeListItem> removedValuesList) throws IOException {
-
-        for (GenomeListItem item : removedValuesList) {
-
-            String loc = item.getPath();
-            if (!HttpUtils.isRemoteURL(loc)) {
-                File genFile = new File(loc);
-                if (loc.endsWith(".genome")) {
-                    GenomeDescriptor descriptor = parseGenomeArchiveFile(genFile);
-                    if (!HttpUtils.isRemoteURL(descriptor.getSequencePath())) {
-                        try {
-                            File seqFile = new File(descriptor.getSequencePath());
-                            seqFile.delete();
-                            File indexFile = new File(seqFile.getAbsolutePath() + ".fai");
-                            indexFile.delete();
-                        } catch (Exception e) {
-                            log.error("Error deleting sequence file ", e);
-                        }
-                    }
-                }
-                genFile.delete();
-            }
-        }
-
-        genomeListManager.removeAllItems(removedValuesList);
-    }
-
-
-    public void downloadGenomes(final List<GenomeListItem> addValuesList) {
+    public void downloadGenomes(final List<GenomeListItem> addValuesList, boolean downloadSequence) {
 
         for (GenomeListItem item : addValuesList) {
             try {
-                getArchiveFile(item.getPath());
+
+                File archiveFile = getArchiveFile(item.getPath());                  // Has side affect of downloading .genome file
+
+                if (downloadSequence) {
+
+
+                    GenomeDescriptor genomeDescriptor = parseGenomeArchiveFile(archiveFile);
+
+                    if (genomeDescriptor.isFasta()) {
+
+                        String fastaPath = genomeDescriptor.getSequencePath();
+                        File localFile = downloadFasta(fastaPath);
+
+                        addLocalFasta(item.getId(), localFile);
+
+                    } else {
+                        MessageUtils.showMessage("Could not download sequence for: " + genomeDescriptor.getName());
+                    }
+
+                }
+
                 genomeListManager.addGenomeItem(item, false);
             } catch (Exception e) {
                 log.error("Error loading genome " + item.getDisplayableName());
@@ -1037,54 +1036,109 @@ public class GenomeManager {
 
 
     /**
-     * Open a selection list to load a genome from the server.   This method is here because its used by multiple
-     * UI elements  (menu bar and genome selection pulldown).
+     * Download a fasta file and associated index files.
+     *
+     * @throws IOException
      */
-    public static void loadGenomeFromServer() {
+    File downloadFasta(String fastaPath) throws IOException {
 
-        Runnable showDialog = () -> {
+        File defaultDir = DirectoryManager.getFastaCacheDirectory();
+        File targetDir = FileDialogUtils.chooseDirectory("Select directory for sequence", defaultDir);
+        if (targetDir == null) {
+            targetDir = defaultDir;
+        }
 
-            Collection<GenomeListItem> inputListItems = GenomeListManager.getInstance().getServerGenomeList();
-            if (inputListItems == null) {
-                //Could not reach genome server.  Not necessary to display a message, getServerGenomeArchiveList does it already
-                return;
-            }
+        String filename = Utilities.getFileNameFromURL(fastaPath);
 
-            GenomeSelectionDialog dialog = new GenomeSelectionDialog(IGV.getMainFrame(), inputListItems, ListSelectionModel.SINGLE_SELECTION);
-            UIUtilities.invokeAndWaitOnEventThread(() -> dialog.setVisible(true));
+        File localFile = new File(targetDir, filename);
+        Downloader.download(new URL(fastaPath), localFile, IGV.getMainFrame());
 
-            if (dialog.isCanceled()) {
-                // Clear the "More..."  selection in pulldown
-                IGVEventBus.getInstance().post(new GenomeResetEvent());
-            } else {
+        URL indexUrl = new URL(fastaPath + ".fai");
+        File localIndexFile = new File(targetDir, filename + ".fai");
+        Downloader.download(indexUrl, localIndexFile, IGV.getMainFrame());
 
-                List<GenomeListItem> selectedValues = dialog.getSelectedValuesList();
 
-                if (selectedValues != null && selectedValues.size() >= 1) {
+        if (fastaPath.endsWith(".gz")) {
 
-                    GenomeListManager.getInstance().addServerGenomeItems(selectedValues);
+            URL gziUrl = new URL(fastaPath + ".gzi");
+            File localGziPath = new File(targetDir, filename + ".gzi");
+            Downloader.download(gziUrl, localGziPath, IGV.getMainFrame());
+        }
 
-                    if (selectedValues.size() == 1) {
-                        final GenomeListItem firstItem = selectedValues.get(0);
+        return localFile;
+    }
 
-                        try {
-                            GenomeManager.getInstance().loadGenome(firstItem.getPath(), null);
-                        } catch (IOException e) {
-                            GenomeListManager.getInstance().removeGenomeListItem(firstItem);
-                            MessageUtils.showErrorMessage("Error loading genome " + firstItem.getDisplayableName(), e);
-                            log.error("Error loading genome " + firstItem.getDisplayableName(), e);
+
+    private Map<String, File> loadSequenceMap() {
+
+        File sequenceFile = new File(DirectoryManager.getGenomeCacheDirectory(), SEQUENCE_MAP_FILE);
+
+        localSequenceMap = new HashMap<>();
+
+        if (sequenceFile.exists()) {
+            BufferedReader br = null;
+
+            try {
+                br = new BufferedReader(new FileReader(sequenceFile));
+                String nextLine;
+                while ((nextLine = br.readLine()) != null) {
+                    String[] tokens = nextLine.split("\t");
+                    if (tokens.length > 1) {
+                        File file = new File(tokens[1]);
+                        if (file.exists()) {
+                            localSequenceMap.put(tokens[0], file);
+                        } else {
+                            log.info("Sequence file not found: " + file.getAbsolutePath());
                         }
                     }
                 }
+            } catch (IOException e) {
+                log.error("Error loading sequence map file", e);
+            } finally {
+                if (br != null) try {
+                    br.close();
+                } catch (IOException e) {
+                    log.error("Error closing sequenceMap file", e);
+                }
             }
-        };
-
-        if (SwingUtilities.isEventDispatchThread()) {
-            LongRunningTask.submit(showDialog);
-        } else {
-            showDialog.run();
         }
+
+        return localSequenceMap;
     }
 
+
+    public File getLocalFasta(String id) {
+        return localSequenceMap.get(id);
+    }
+
+    public void removeLocalFasta(String id) {
+        localSequenceMap.remove(id);
+        updateSequenceMapFile();
+    }
+
+    private void addLocalFasta(String id, File localFile) {
+        localSequenceMap.put(id, localFile);
+        updateSequenceMapFile();
+
+    }
+
+
+    private void updateSequenceMapFile() {
+
+        PrintWriter pw = null;
+
+        try {
+            File sequenceFile = new File(DirectoryManager.getGenomeCacheDirectory(), SEQUENCE_MAP_FILE);
+            pw = new PrintWriter(new BufferedWriter(new FileWriter(sequenceFile)));
+
+            for (Map.Entry<String, File> entry : localSequenceMap.entrySet()) {
+                pw.println(entry.getKey() + "\t" + entry.getValue());
+            }
+        } catch (IOException e) {
+            log.error("Error writing sequence map", e);
+        } finally {
+            if (pw != null) pw.close();
+        }
+    }
 
 }
