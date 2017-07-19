@@ -49,14 +49,13 @@ import org.broad.igv.prefs.Constants;
 import org.broad.igv.prefs.PreferencesManager;
 import org.broad.igv.track.*;
 import org.broad.igv.ui.IGV;
-import org.broad.igv.ui.commandbar.GenomeSelectionDialog;
+import org.broad.igv.ui.commandbar.GenomeListManager;
 import org.broad.igv.ui.panel.FrameManager;
 import org.broad.igv.ui.util.*;
 import org.broad.igv.ui.util.ProgressMonitor;
 import org.broad.igv.ui.util.download.Downloader;
 import org.broad.igv.util.*;
 
-import javax.swing.*;
 import java.awt.*;
 import java.io.*;
 import java.net.MalformedURLException;
@@ -523,12 +522,15 @@ public class GenomeManager {
 
         if (HttpUtils.isRemoteURL(genomePath.toLowerCase())) {
             // We need a local copy, as there is no http zip file reader
+
             URL genomeArchiveURL = new URL(genomePath);
             final String tmp = URLDecoder.decode(new URL(genomePath).getFile(), "UTF-8");
             String cachedFilename = Utilities.getFileNameFromURL(tmp);
+
             if (!DirectoryManager.getGenomeCacheDirectory().exists()) {
                 DirectoryManager.getGenomeCacheDirectory().mkdir();
             }
+
             archiveFile = new File(DirectoryManager.getGenomeCacheDirectory(), cachedFilename);
             refreshCache(archiveFile, genomeArchiveURL);
         } else {
@@ -637,27 +639,15 @@ public class GenomeManager {
                         PreferencesManager.getPreferences().getAsBoolean(Constants.AUTO_UPDATE_GENOMES);
 
                 if (forceUpdate) {
+
                     log.info("Refreshing genome: " + genomeArchiveURL.toString());
-                    File tmpFile = new File(cachedFile.getAbsolutePath() + ".tmp");
-                    if (HttpUtils.getInstance().downloadFile(genomeArchiveURL.toExternalForm(), tmpFile).isSuccess()) {
 
-                        tmpFile.deleteOnExit();
-                        boolean success = true;
+                    Downloader.download(genomeArchiveURL, cachedFile, IGV.getMainFrame());
 
-                        //if (cachedDescriptor.hasCustomSequenceLocation()) {
-                        //    success = rewriteSequenceLocation(tmpFile, cachedDescriptor.getSequencePath());
-                        //}
-
-                        if (success) {
-                            FileUtils.copyFile(tmpFile, cachedFile);
-                        } else {
-                            log.warn("Updating genome failed: " + genomeArchiveURL.toString());
-                        }
-                    }
                 }
             } else {
                 // Copy file directly from the server to local cache.
-                HttpUtils.getInstance().downloadFile(genomeArchiveURL.toExternalForm(), cachedFile);
+                Downloader.download(genomeArchiveURL, cachedFile, IGV.getMainFrame());
             }
         } catch (Exception e) {
             MessageUtils.showErrorMessage("An error was encountered refreshing the genome cache: " + e.getMessage(), e);
@@ -1005,25 +995,23 @@ public class GenomeManager {
         for (GenomeListItem item : addValuesList) {
             try {
 
+
                 File archiveFile = getArchiveFile(item.getPath());                  // Has side affect of downloading .genome file
 
-                if (downloadSequence) {
-
+                if (downloadSequence && item.getPath().endsWith(".genome")) {
 
                     GenomeDescriptor genomeDescriptor = parseGenomeArchiveFile(archiveFile);
 
                     if (genomeDescriptor.isFasta()) {
-
                         String fastaPath = genomeDescriptor.getSequencePath();
                         File localFile = downloadFasta(fastaPath);
-
                         addLocalFasta(item.getId(), localFile);
 
                     } else {
                         MessageUtils.showMessage("Could not download sequence for: " + genomeDescriptor.getName());
                     }
-
                 }
+
 
                 genomeListManager.addGenomeItem(item, false);
             } catch (Exception e) {

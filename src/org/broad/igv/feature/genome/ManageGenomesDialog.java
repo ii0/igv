@@ -35,6 +35,7 @@ import org.broad.igv.event.GenomeResetEvent;
 import org.broad.igv.event.IGVEventBus;
 import org.broad.igv.prefs.IGVPreferences;
 import org.broad.igv.prefs.PreferencesManager;
+import org.broad.igv.ui.commandbar.GenomeListManager;
 import org.broad.igv.ui.commandbar.GenomeSelectionDialog;
 import org.broad.igv.ui.commandbar.JList7;
 import org.broad.igv.ui.util.MessageUtils;
