@@ -1031,7 +1031,8 @@ public class GenomeManager {
     File downloadFasta(String fastaPath) throws IOException {
 
         File defaultDir = DirectoryManager.getFastaCacheDirectory();
-        File targetDir = FileDialogUtils.chooseDirectory("Select directory for sequence", defaultDir);
+        File targetDir = defaultDir;
+        //File targetDir = FileDialogUtils.chooseDirectory("Select directory for sequence", defaultDir);
         if (targetDir == null) {
             targetDir = defaultDir;
         }
