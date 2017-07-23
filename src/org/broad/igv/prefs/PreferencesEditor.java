@@ -388,6 +388,17 @@ public class PreferencesEditor extends javax.swing.JDialog {
         vSpacer8 = new JPanel(null);
         vSpacer9 = new JPanel(null);
         vSpacer10 = new JPanel(null);
+        panel36 = new JScrollPane();
+        cramPanel = new JPanel();
+        panel28 = new JPanel();
+        panel37 = new JPanel();
+        label28 = new JLabel();
+        cramCacheSizeField = new JTextField();
+        panel38 = new JPanel();
+        label29 = new JLabel();
+        cramCacheDirectoryField = new JTextField();
+        cramCacheDirectoryButton = new JButton();
+        cramCacheReferenceCB = new JCheckBox();
         okCancelButtonPanel = new ButtonPanel();
         okButton = new JButton();
         cancelButton = new JButton();
@@ -2353,6 +2364,79 @@ public class PreferencesEditor extends javax.swing.JDialog {
                         panel29.setViewportView(advancedPanel);
                     }
                     tabbedPane.addTab("Advanced", panel29);
+
+                    //======== panel36 ========
+                    {
+
+                        //======== cramPanel ========
+                        {
+                            cramPanel.setBorder(new EmptyBorder(1, 10, 1, 10));
+                            cramPanel.setLayout(null);
+
+                            //======== panel28 ========
+                            {
+                                panel28.setLayout(new FlowLayout(FlowLayout.LEFT));
+                            }
+                            cramPanel.add(panel28);
+                            panel28.setBounds(new Rectangle(new Point(15, 7), panel28.getPreferredSize()));
+
+                            //======== panel37 ========
+                            {
+                                panel37.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+                                //---- label28 ----
+                                label28.setText("Reference cache size (mb): ");
+                                panel37.add(label28);
+
+                                //---- cramCacheSizeField ----
+                                cramCacheSizeField.setPreferredSize(new Dimension(100, 26));
+                                panel37.add(cramCacheSizeField);
+                            }
+                            cramPanel.add(panel37);
+                            panel37.setBounds(new Rectangle(new Point(20, 93), panel37.getPreferredSize()));
+
+                            //======== panel38 ========
+                            {
+                                panel38.setLayout(new FlowLayout(FlowLayout.LEFT));
+
+                                //---- label29 ----
+                                label29.setText("Cache directory: ");
+                                panel38.add(label29);
+
+                                //---- cramCacheDirectoryField ----
+                                cramCacheDirectoryField.setMinimumSize(new Dimension(400, 26));
+                                cramCacheDirectoryField.setPreferredSize(new Dimension(400, 26));
+                                panel38.add(cramCacheDirectoryField);
+
+                                //---- cramCacheDirectoryButton ----
+                                cramCacheDirectoryButton.setText("Change...");
+                                panel38.add(cramCacheDirectoryButton);
+                            }
+                            cramPanel.add(panel38);
+                            panel38.setBounds(new Rectangle(new Point(20, 144), panel38.getPreferredSize()));
+
+                            //---- cramCacheReferenceCB ----
+                            cramCacheReferenceCB.setText("Cache reference sequences");
+                            cramPanel.add(cramCacheReferenceCB);
+                            cramCacheReferenceCB.setBounds(new Rectangle(new Point(20, 55), cramCacheReferenceCB.getPreferredSize()));
+
+                            { // compute preferred size
+                                Dimension preferredSize = new Dimension();
+                                for(int i = 0; i < cramPanel.getComponentCount(); i++) {
+                                    Rectangle bounds = cramPanel.getComponent(i).getBounds();
+                                    preferredSize.width = Math.max(bounds.x + bounds.width, preferredSize.width);
+                                    preferredSize.height = Math.max(bounds.y + bounds.height, preferredSize.height);
+                                }
+                                Insets insets = cramPanel.getInsets();
+                                preferredSize.width += insets.right;
+                                preferredSize.height += insets.bottom;
+                                cramPanel.setMinimumSize(preferredSize);
+                                cramPanel.setPreferredSize(preferredSize);
+                            }
+                        }
+                        panel36.setViewportView(cramPanel);
+                    }
+                    tabbedPane.addTab("Cram", panel36);
                 }
                 panel6.add(tabbedPane, BorderLayout.NORTH);
 
@@ -4195,6 +4279,17 @@ public class PreferencesEditor extends javax.swing.JDialog {
     private JPanel vSpacer8;
     private JPanel vSpacer9;
     private JPanel vSpacer10;
+    private JScrollPane panel36;
+    private JPanel cramPanel;
+    private JPanel panel28;
+    private JPanel panel37;
+    private JLabel label28;
+    private JTextField cramCacheSizeField;
+    private JPanel panel38;
+    private JLabel label29;
+    private JTextField cramCacheDirectoryField;
+    private JButton cramCacheDirectoryButton;
+    private JCheckBox cramCacheReferenceCB;
     private ButtonPanel okCancelButtonPanel;
     JButton okButton;
     private JButton cancelButton;

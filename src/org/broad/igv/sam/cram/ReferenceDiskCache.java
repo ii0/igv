@@ -25,8 +25,6 @@ import java.util.zip.*;
 
 public class ReferenceDiskCache {
 
-    private static final int MAX_SIZE = 100000000;  // 1 GB,  make user preference?
-
     private static Logger log = Logger.getLogger(ReferenceDiskCache.class);
 
     private static final ExecutorService threadExecutor = Executors.newFixedThreadPool(1);
@@ -129,7 +127,7 @@ public class ReferenceDiskCache {
         int maxSize = PreferencesManager.getPreferences().getAsInt(Constants.CRAM_CACHE_SIZE);
         int totalSize = 0;
         for(File f : files) {
-            if(totalSize > MAX_SIZE) {
+            if(totalSize > maxSize) {
                 f.delete();
             }
             else {

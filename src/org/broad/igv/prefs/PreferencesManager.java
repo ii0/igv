@@ -322,7 +322,7 @@ public class PreferencesManager implements IGVEventObserver {
         genericDefaults.put(SAM_SHOW_ALIGNMENT_TRACK, "true");
 
         genericDefaults.put(CRAM_CACHE_SEQUENCES, "true");
-        genericDefaults.put(CRAM_CACHE_SIZE, "1000");   // size in MB
+        genericDefaults.put(CRAM_CACHE_SIZE, "500");   // size in MB
 
         genericDefaults.put(BYPASS_FILE_AUTO_DISCOVERY, "false");
 
