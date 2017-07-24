@@ -38,6 +38,8 @@ import javax.swing.*;
 import javax.swing.filechooser.FileSystemView;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.prefs.Preferences;
 
 /**
@@ -219,7 +221,7 @@ public class DirectoryManager {
             directory = new File(cachePref);
         }
 
-        if(directory == null || !directory.exists() || !directory.isDirectory()) {
+        if (directory == null || !directory.exists() || !directory.isDirectory()) {
 
             directory = new File(getGenomeCacheDirectory(), "seq");
             if (!directory.exists()) {
@@ -372,6 +374,24 @@ public class DirectoryManager {
         BAM_CACHE_DIRECTORY = null;
         return true;
 
+    }
+
+    public static void moveDirectoryContents(File oldDirectory, File newDirectory) {
+
+        if (oldDirectory != null && oldDirectory.exists() && oldDirectory.isDirectory() &&
+                newDirectory != null && newDirectory.exists() && newDirectory.isDirectory()) {
+
+            for (File f : oldDirectory.listFiles()) {
+                Path p1 = f.toPath();
+                Path p2 = (new File(newDirectory, f.getName())).toPath();
+                try {
+                    Files.move(p1, p2);
+                } catch (IOException e) {
+                    log.error("Error moving file", e);
+                }
+            }
+
+        }
     }
 
     /**

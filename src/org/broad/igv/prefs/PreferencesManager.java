@@ -375,7 +375,6 @@ public class PreferencesManager implements IGVEventObserver {
         genericDefaults.put(GENOME_SPACE_ATM_SERVER, "https://atm.genomespace.org/atm/v1.0/");
         genericDefaults.put(GENOME_SPACE_IDENTITY_SERVER, "https://identitydev.genomespace.org:8444/identityServer/basic");
 
-        genericDefaults.put(CRAM_CACHE_SEQUENCES, "true");
 
         genericDefaults.put(DB_ENABLED, "false");
         genericDefaults.put(DB_HOST, "");
