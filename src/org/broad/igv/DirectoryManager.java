@@ -28,6 +28,7 @@ package org.broad.igv;
 import org.apache.commons.io.FileUtils;
 import org.apache.log4j.*;
 import org.broad.igv.exceptions.DataLoadException;
+import org.broad.igv.prefs.Constants;
 import org.broad.igv.prefs.PreferencesManager;
 import org.broad.igv.ui.util.FileDialogUtils;
 import org.broad.igv.ui.util.MessageUtils;
@@ -212,9 +213,18 @@ public class DirectoryManager {
 
     public static File getFastaCacheDirectory() {
 
-        File directory = new File(getGenomeCacheDirectory(), "seq");
-        if(!directory.exists()) {
-            directory.mkdir();
+        File directory = null;
+        String cachePref = PreferencesManager.getPreferences().get(Constants.CRAM_CACHE_DIRECTORY);
+        if (cachePref != null) {
+            directory = new File(cachePref);
+        }
+
+        if(directory == null || !directory.exists() || !directory.isDirectory()) {
+
+            directory = new File(getGenomeCacheDirectory(), "seq");
+            if (!directory.exists()) {
+                directory.mkdir();
+            }
         }
         return directory;
     }

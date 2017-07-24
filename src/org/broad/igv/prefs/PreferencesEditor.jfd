@@ -7232,6 +7232,22 @@
                     <void property="name">
                      <string>cramCacheSizeField</string>
                     </void>
+                    <void method="addEvent">
+                     <object class="com.jformdesigner.model.FormEvent">
+                      <string>java.awt.event.ActionListener</string>
+                      <string>actionPerformed</string>
+                      <string>cramCacheSizeFieldActionPerformed</string>
+                      <boolean>true</boolean>
+                     </object>
+                    </void>
+                    <void method="addEvent">
+                     <object class="com.jformdesigner.model.FormEvent">
+                      <string>java.awt.event.FocusListener</string>
+                      <string>focusLost</string>
+                      <string>cramCacheSizeFieldFocusLost</string>
+                      <boolean>true</boolean>
+                     </object>
+                    </void>
                    </object>
                   </void>
                  </object>
@@ -7304,6 +7320,14 @@
                     <void property="name">
                      <string>cramCacheDirectoryButton</string>
                     </void>
+                    <void method="addEvent">
+                     <object class="com.jformdesigner.model.FormEvent">
+                      <string>java.awt.event.ActionListener</string>
+                      <string>actionPerformed</string>
+                      <string>cramCacheDirectoryButtonActionPerformed</string>
+                      <boolean>true</boolean>
+                     </object>
+                    </void>
                    </object>
                   </void>
                  </object>
@@ -7328,6 +7352,14 @@
                   </void>
                   <void property="name">
                    <string>cramCacheReferenceCB</string>
+                  </void>
+                  <void method="addEvent">
+                   <object class="com.jformdesigner.model.FormEvent">
+                    <string>java.awt.event.ActionListener</string>
+                    <string>actionPerformed</string>
+                    <string>cramCacheReferenceCBActionPerformed</string>
+                    <boolean>true</boolean>
+                   </object>
                   </void>
                  </object>
                  <object class="com.jformdesigner.model.FormLayoutConstraints">
