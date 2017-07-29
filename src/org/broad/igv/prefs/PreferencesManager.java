@@ -32,6 +32,7 @@ public class PreferencesManager implements IGVEventObserver {
 
     private static String prefFile;  // User preferences file
 
+    private static Set userPreferenceKeys = new HashSet();
 
     private PreferencesManager() {
     }
@@ -59,6 +60,9 @@ public class PreferencesManager implements IGVEventObserver {
         return genericPreferences;
     }
 
+    public static boolean hasUserPreference(String key) {
+        return userPreferenceKeys.contains(key);
+    }
 
     public static void setPrefsFile(String prefsFile) {
         prefFile = prefsFile;
@@ -73,6 +77,7 @@ public class PreferencesManager implements IGVEventObserver {
             }
 
             Map<String, Map<String, String>> userPrefs = load(prefFile);
+            userPreferenceKeys.addAll(userPrefs.keySet());
 
             IGVPreferences defaultPreferences = new IGVPreferences(genericDefaults, null);
             genericPreferences = new IGVPreferences(userPrefs.get(NULL_CATEGORY), defaultPreferences);

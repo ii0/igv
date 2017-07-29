@@ -93,6 +93,7 @@ public class IGVPreferences {
         }
     }
 
+
     /**
      * Return preference with given key and specified default value.  If key is not present defaultValue is returned,
      * no search through defaults or hierarchy is performed.
@@ -105,6 +106,7 @@ public class IGVPreferences {
         String val = userPreferences.get(key);
         return val == null ? defaultValue : val;
     }
+
 
 
     /**

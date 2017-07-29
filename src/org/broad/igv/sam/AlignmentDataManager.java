@@ -46,6 +46,11 @@ import java.util.*;
 
 import static org.broad.igv.prefs.Constants.*;
 
+/**
+ * Manages data loading for a single alignment file.  Shared between alignment, coverage, and junction
+ * tracks.
+ */
+
 public class AlignmentDataManager implements IGVEventObserver {
 
     private static Logger log = Logger.getLogger(AlignmentDataManager.class);
@@ -63,6 +68,7 @@ public class AlignmentDataManager implements IGVEventObserver {
     private SpliceJunctionHelper.LoadOptions loadOptions;
     private Object loadLock = new Object();
     private boolean showAlignments = true;
+    private boolean hasYCTags = false;
 
     public AlignmentDataManager(ResourceLocator locator, Genome genome) throws IOException {
         this.locator = locator;
@@ -145,6 +151,10 @@ public class AlignmentDataManager implements IGVEventObserver {
         return reader.isPairedEnd();
     }
 
+    public boolean hasYCTags() {
+        return reader.hasYCTags();
+    }
+
     public boolean hasIndex() {
         return reader.hasIndex();
     }
@@ -215,7 +225,7 @@ public class AlignmentDataManager implements IGVEventObserver {
     }
 
     public void setViewAsPairs(boolean option, AlignmentTrack.RenderOptions renderOptions) {
-        if (option == renderOptions.isViewPairs()) {
+        if (option == renderOptions.viewPairs) {
             return;
         }
         renderOptions.setViewPairs(option);
@@ -316,8 +326,8 @@ public class AlignmentDataManager implements IGVEventObserver {
 
 
     public synchronized PackedAlignments getGroups(RenderContext context, AlignmentTrack.RenderOptions renderOptions) {
-     //   load(context.getReferenceFrame(), renderOptions, false);
-     //   Range range = context.getReferenceFrame().getCurrentRange();
+        //   load(context.getReferenceFrame(), renderOptions, false);
+        //   Range range = context.getReferenceFrame().getCurrentRange();
 
         AlignmentInterval interval = getLoadedInterval(context.getReferenceFrame());
         if (interval != null) {
@@ -409,7 +419,7 @@ public class AlignmentDataManager implements IGVEventObserver {
     public void updatePEStats(AlignmentTrack.RenderOptions renderOptions) {
         if (this.peStats != null) {
             for (PEStats stats : peStats.values()) {
-                stats.computeInsertSize(renderOptions.getMinInsertSizePercentile(), renderOptions.getMaxInsertSizePercentile());
+                stats.computeInsertSize(renderOptions.minInsertSizePercentile, renderOptions.maxInsertSizePercentile);
             }
         }
     }
@@ -449,6 +459,7 @@ public class AlignmentDataManager implements IGVEventObserver {
     public Collection<AlignmentInterval> getLoadedIntervals() {
         return intervalCache;
     }
+
 
     public static class DownsampleOptions {
         private boolean downsample;

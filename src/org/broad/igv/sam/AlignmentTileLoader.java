@@ -52,7 +52,7 @@ import static org.broad.igv.prefs.Constants.*;
  *
  * @author jrobinso
  */
-public class AlignmentTileLoader implements IGVEventObserver{
+public class AlignmentTileLoader implements IGVEventObserver {
 
     private static Logger log = Logger.getLogger(AlignmentTileLoader.class);
 
@@ -69,6 +69,7 @@ public class AlignmentTileLoader implements IGVEventObserver{
     private boolean tenX = false;
     private boolean phased = false;
     private boolean moleculo = false;
+    private boolean ycTags = false;
 
     static void cancelReaders() {
         for (WeakReference<AlignmentTileLoader> readerRef : activeLoaders) {
@@ -109,6 +110,9 @@ public class AlignmentTileLoader implements IGVEventObserver{
         return reader.hasIndex();
     }
 
+    public boolean hasYCTags() {
+        return ycTags;
+    }
 
     AlignmentTile loadTile(String chr,
                            int start,
@@ -150,7 +154,7 @@ public class AlignmentTileLoader implements IGVEventObserver{
             activeLoaders.add(ref);
             IGVEventBus.getInstance().subscribe(StopEvent.class, this);
 
-            if(IGV.hasInstance()) {
+            if (IGV.hasInstance()) {
                 IGV.getInstance().enableStopButton(true);
             }
 
@@ -158,15 +162,16 @@ public class AlignmentTileLoader implements IGVEventObserver{
 
             while (iter != null && iter.hasNext()) {
 
-                if(cancel) {
+                if (cancel) {
                     break;
                 }
 
                 Alignment record = iter.next();
 
-                if(readStats != null) {
+                if (readStats != null) {
                     readStats.addAlignment(record);
-                };
+                }
+                ;
 
                 // Set mate sequence of unmapped mates
                 // Put a limit on the total size of this collection.
@@ -197,6 +202,10 @@ public class AlignmentTileLoader implements IGVEventObserver{
                             mappedMates.remove(readName);
                         }
                     }
+                }
+
+                if (!ycTags && record.getAttribute("YC") != null) {
+                    ycTags = true;
                 }
 
                 // TODO -- this is not reliable tests for TenX.  Other platforms might use BX
@@ -256,7 +265,7 @@ public class AlignmentTileLoader implements IGVEventObserver{
                 }
             }
 
-            if(readStats != null) {
+            if (readStats != null) {
                 readStats.compute();
             }
 
@@ -295,7 +304,7 @@ public class AlignmentTileLoader implements IGVEventObserver{
 
             IGVEventBus.getInstance().unsubscribe(this);
 
-            if(activeLoaders.isEmpty() && IGV.hasInstance()) {
+            if (activeLoaders.isEmpty() && IGV.hasInstance()) {
                 IGV.getInstance().enableStopButton(false);
             }
 
@@ -354,7 +363,7 @@ public class AlignmentTileLoader implements IGVEventObserver{
 
     @Override
     public void receiveEvent(Object event) {
-        if(event instanceof StopEvent) {
+        if (event instanceof StopEvent) {
             System.out.println("Canceled");
             cancel = true;
 
